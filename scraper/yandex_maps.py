@@ -1,4 +1,5 @@
 import time
+import numpy as np
 
 def get_polygons_from_map(driver):
     # Загружаем JS код из файла
@@ -12,48 +13,68 @@ def get_polygons_from_map(driver):
 def click_on_city(driver, city_name):
     """
     Пример функции, которая ищет и кликает по населенному пункту.
-    Реализация зависит от структуры DOM и может потребовать доработки.
+    ВАЖНО! Реализация зависит от структуры исходного кода HTML и может потребовать доработки.
+    Чаще всего меняются только XPATH и CSS_SELECTOR'ы
     """
-    # Пример: поиск поля поиска и ввод названия города
+
     search_input_xpath = "//input[@placeholder='Поиск и выбор мест']"
-    search_button_xpath = "//button[contains(@class, 'button _view_search _size_medium')]"
 
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.common.keys import Keys
+    from selenium.common.exceptions import NoSuchElementException, TimeoutException, StaleElementReferenceException, \
+    ElementNotInteractableException, SessionNotCreatedException, NoSuchWindowException
 
-    wait = WebDriverWait(driver, 10)
+    wait = WebDriverWait(driver, np.random.randint(20, 30))
 
-    # Находим поле поиска
-    search_input = wait.until(EC.presence_of_element_located((By.XPATH, search_input_xpath)))
-    search_input.clear()
-    search_input.send_keys(city_name)
+    try:
+        adr_txt = city_name
+        adr_elem = wait.until(
+            EC.visibility_of_element_located((By.XPATH, search_input_xpath)))
+        
+        adr_elem.send_keys(Keys.CONTROL + "a")
+        adr_elem.send_keys(Keys.BACKSPACE)
+        adr_elem.send_keys(adr_txt)
+        # div_element = driver.find_element(By.CSS_SELECTOR, 'div.search-snippet-view__body._type_business')
+        # ActionChains(driver).context_click(div_element).perform()
+        time.sleep(1) # жду секунду, чтобы загрузился выпадающий список, откуда я возьму первое значение
+        # adr_elem.send_keys(Keys.DOWN)
+        # time.sleep(1)
+        try:
+            # ищу элемент с атрибутом aria-activedescendant='0:0' из выпадающего списка, когда вводится адрес
+            # если нужно выбрать другой (второй, третий и так далее) элемент, измените значение '0:0' на нужное
+            # builder.moveToElement(someElement).build().perform();
+            # element_to_click = wait.until(
+            #     EC.presence_of_element_located((By.CSS_SELECTOR, "[aria-activedescendant='0:0']"))
+            # )
+            
+            adr_elem.send_keys(Keys.ENTER)
+            time.sleep(1)
+            # adr_elem.click()
+            # element_to_click.click()
+            # Щелчок левой кнопкой мыши по элементу (ЛКМ)
+            # webdriver.ActionChains(driver).context_click(element_to_click).perform()
 
-    # Нажимаем кнопку поиска
-    search_button = wait.until(EC.element_to_be_clickable((By.XPATH, search_button_xpath)))
-    search_button.click()
+        except Exception as e:
+            assert Warning("Не удалось найти элемент для клика:", e)
+            return 2
 
-    # # Ждем загрузки результатов и кликаем по первому результату
-    # time.sleep(5)  # Можно заменить на более умное ожидание
-
-    # # Клик по первому результату (пример)
-    # first_result_xpath = "(//div[contains(@class, 'search-snippet-view')])[1]"
-    # first_result = wait.until(EC.element_to_be_clickable((By.XPATH, first_result_xpath)))
-    # first_result.click()
-
-    time.sleep(5)  # Ждем отрисовки полигонов
+        # URL = driver.current_url  # совсем забыл, еще нужна URL'ка, надеюсь найду способ как ее дальше воткнуть
+        # coords = wait.until(EC.visibility_of_element_located(
+        #             (By.XPATH, "//div[contains(@class, 'toponym-card-title-view__coords-badge')]")))
+        # lat, lon = [eval(x) for x in coords.text.split(', ')]
+        return 1
+    except(TimeoutException, NoSuchElementException, StaleElementReferenceException,
+                ElementNotInteractableException, SessionNotCreatedException,
+                ValueError, IndexError) as e:
+        return 2
 
 def inject_custom_js(driver):
     # Сначала вставляем custom.js код напрямую (чтобы fetch перехватить)
     with open('scraper/custom.js', 'r', encoding='utf-8') as f:
         custom_js = f.read()
     driver.execute_script(custom_js)
-
-def inject_inject_js(driver):
-    # inject.js ссылается на custom.js как внешний скрипт, но у нас нет расширения chrome,
-    # поэтому перепишем inject.js так, чтобы он просто вызывал custom.js код напрямую.
-    # Здесь можно упростить, например, пропустить inject.js и вставить custom.js напрямую.
-    pass  # Можно оставить пустым или использовать для других целей
 
 def setup_listener(driver):
     # Подписываемся на событие FromPage и сохраняем данные в window.lastPolygonData
