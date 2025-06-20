@@ -46,28 +46,30 @@ function passData(string) {
 	try {
 		const result = json.data.exactResult
 		const array = result.displayGeometry.geometries
+		const type_of_poly = result.displayGeometry.geometries[0].type
 		const title = result.title
         const addr = result.address
         const full_address = result.description
+		const centre = result.coordinates
 		
 		var polygons = []
 		for(var poly of array) polygons.push(poly.coordinates[0])
 		
-		var object = { name: title, address: addr, description: full_address, polygons }
+		var object = { name: title, address: addr, description: full_address, type_of_polygon: type_of_poly, centroid: centre, polygons }
 		
 		var event = new CustomEvent("FromPage", { detail: object });
 		window.dispatchEvent(event); // saves to local storage to show in popup
 		
-		var clipboard = JSON.stringify(object, null, 2)
-		copy(clipboard, "text/plain") // copies to clipboard
+		// var clipboard = JSON.stringify(object, null, 2)
+		// copy(clipboard, "text/plain") // copies to clipboard
 	} catch (err) { console.log(err) }
 }
 
-// Загрузка в буфер обмена (ctrl c)
-function copy(str, mimeType) {
-  document.oncopy = function(event) {
-    event.clipboardData.setData(mimeType, str);
-    event.preventDefault();
-  };
-  document.execCommand("copy", false, null);
-}
+// // Загрузка в буфер обмена (ctrl c)
+// function copy(str, mimeType) {
+//   document.oncopy = function(event) {
+//     event.clipboardData.setData(mimeType, str);
+//     event.preventDefault();
+//   };
+//   document.execCommand("copy", false, null);
+// }
